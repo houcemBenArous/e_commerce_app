@@ -1,0 +1,40 @@
+# Monorepo root ignores
+
+# Node modules (all packages)
+node_modules/
+**/node_modules/
+
+# Builds / outputs
+**/dist/
+**/build/
+frontend/.next/
+frontend/out/
+**/.turbo/
+frontend/.vercel/
+
+# Coverage
+coverage/
+**/coverage/
+
+# Env files (never commit secrets)
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+!**/.env.*.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
