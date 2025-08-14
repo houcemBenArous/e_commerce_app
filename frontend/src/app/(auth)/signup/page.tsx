@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
 import { saveAccessToken, decodeJwt, routeForRoles } from "../../../lib/auth";
+import { COUNTRIES } from "../../../lib/countries";
 
 function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -14,6 +15,13 @@ export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [stateRegion, setStateRegion] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +29,13 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
+    phone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
     password?: string;
     confirmPassword?: string;
     agree?: string;
@@ -35,6 +50,12 @@ export default function SignupPage() {
     const nextErrors: typeof errors = {};
     if (!name.trim()) nextErrors.name = "Name is required";
     if (!validateEmail(email)) nextErrors.email = "Enter a valid email";
+    if (!phone.trim()) nextErrors.phone = "Phone number is required";
+    if (!addressLine1.trim()) nextErrors.addressLine1 = "Address Line 1 is required";
+    if (!city.trim()) nextErrors.city = "City is required";
+    if (!stateRegion.trim()) nextErrors.state = "State/Province/Region is required";
+    if (!postalCode.trim()) nextErrors.postalCode = "Postal/ZIP code is required";
+    if (!country.trim()) nextErrors.country = "Country is required";
     if (password.length < 8)
       nextErrors.password = "Password must be at least 8 characters";
     if (confirmPassword !== password)
@@ -49,7 +70,18 @@ export default function SignupPage() {
       const res = await fetch(`${API_BASE}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          phone,
+          addressLine1,
+          addressLine2: addressLine2 || undefined,
+          city,
+          state: stateRegion,
+          postalCode,
+          country,
+        }),
         credentials: "include",
       });
       if (!res.ok) {
@@ -122,6 +154,175 @@ export default function SignupPage() {
           {errors.email && (
             <p id="email-error" className="text-sm text-red-600">
               {errors.email}
+            </p>
+          )}
+        </div>
+
+        {/* Phone */}
+        <div className="space-y-2">
+          <label htmlFor="phone" className="text-sm font-medium">
+            Phone number
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            aria-invalid={!!errors.phone}
+            aria-describedby="phone-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="+1 555 123 4567"
+          />
+          {errors.phone && (
+            <p id="phone-error" className="text-sm text-red-600">
+              {errors.phone}
+            </p>
+          )}
+        </div>
+
+        {/* Country */}
+        <div className="space-y-2">
+          <label htmlFor="country" className="text-sm font-medium">
+            Country
+          </label>
+          <select
+            id="country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            aria-invalid={!!errors.country}
+            aria-describedby="country-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-white text-neutral-900 dark:bg-white dark:text-neutral-900 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            autoComplete="country-name"
+            style={{ colorScheme: "light" }}
+          >
+            <option value="" className="text-neutral-500" disabled>
+              Select a country
+            </option>
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c} className="text-neutral-900">
+                {c}
+              </option>
+            ))}
+          </select>
+          {errors.country && (
+            <p id="country-error" className="text-sm text-red-600">
+              {errors.country}
+            </p>
+          )}
+        </div>
+
+        {/* Address Line 1 */}
+        <div className="space-y-2">
+          <label htmlFor="addressLine1" className="text-sm font-medium">
+            Street address (Line 1)
+          </label>
+          <input
+            id="addressLine1"
+            type="text"
+            autoComplete="address-line1"
+            value={addressLine1}
+            onChange={(e) => setAddressLine1(e.target.value)}
+            aria-invalid={!!errors.addressLine1}
+            aria-describedby="addressLine1-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="123 Main St"
+          />
+          {errors.addressLine1 && (
+            <p id="addressLine1-error" className="text-sm text-red-600">
+              {errors.addressLine1}
+            </p>
+          )}
+        </div>
+
+        {/* Address Line 2 */}
+        <div className="space-y-2">
+          <label htmlFor="addressLine2" className="text-sm font-medium">
+            Street address (Line 2)
+          </label>
+          <input
+            id="addressLine2"
+            type="text"
+            autoComplete="address-line2"
+            value={addressLine2}
+            onChange={(e) => setAddressLine2(e.target.value)}
+            aria-invalid={!!errors.addressLine2}
+            aria-describedby="addressLine2-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Apt, suite, unit, etc. (optional)"
+          />
+          {errors.addressLine2 && (
+            <p id="addressLine2-error" className="text-sm text-red-600">
+              {errors.addressLine2}
+            </p>
+          )}
+        </div>
+
+        {/* City */}
+        <div className="space-y-2">
+          <label htmlFor="city" className="text-sm font-medium">
+            City
+          </label>
+          <input
+            id="city"
+            type="text"
+            autoComplete="address-level2"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            aria-invalid={!!errors.city}
+            aria-describedby="city-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="San Francisco"
+          />
+          {errors.city && (
+            <p id="city-error" className="text-sm text-red-600">
+              {errors.city}
+            </p>
+          )}
+        </div>
+
+        {/* State/Province/Region */}
+        <div className="space-y-2">
+          <label htmlFor="state" className="text-sm font-medium">
+            State/Province/Region
+          </label>
+          <input
+            id="state"
+            type="text"
+            autoComplete="address-level1"
+            value={stateRegion}
+            onChange={(e) => setStateRegion(e.target.value)}
+            aria-invalid={!!errors.state}
+            aria-describedby="state-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="CA"
+          />
+          {errors.state && (
+            <p id="state-error" className="text-sm text-red-600">
+              {errors.state}
+            </p>
+          )}
+        </div>
+
+        {/* Postal code */}
+        <div className="space-y-2">
+          <label htmlFor="postalCode" className="text-sm font-medium">
+            ZIP/Postal code
+          </label>
+          <input
+            id="postalCode"
+            type="text"
+            autoComplete="postal-code"
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value)}
+            aria-invalid={!!errors.postalCode}
+            aria-describedby="postalCode-error"
+            className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="94107"
+          />
+          {errors.postalCode && (
+            <p id="postalCode-error" className="text-sm text-red-600">
+              {errors.postalCode}
             </p>
           )}
         </div>

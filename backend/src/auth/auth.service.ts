@@ -47,6 +47,13 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
+      phone: dto.phone,
+      addressLine1: dto.addressLine1,
+      addressLine2: dto.addressLine2,
+      city: dto.city,
+      state: dto.state,
+      postalCode: dto.postalCode,
+      country: dto.country,
     });
     const tokens = await this.signTokens(user.id, user.email, user.roles ?? [Role.User]);
     const rtHash = await this.hash(tokens.refreshToken);

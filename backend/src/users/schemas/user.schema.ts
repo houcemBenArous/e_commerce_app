@@ -15,6 +15,27 @@ export class User {
   @Prop({ required: true })
   passwordHash: string;
 
+  @Prop({ required: true, trim: true })
+  phone: string;
+
+  @Prop({ required: true, trim: true })
+  addressLine1: string;
+
+  @Prop({ trim: true })
+  addressLine2?: string;
+
+  @Prop({ required: true, trim: true })
+  city: string;
+
+  @Prop({ required: true, trim: true })
+  state: string;
+
+  @Prop({ required: true, trim: true })
+  postalCode: string;
+
+  @Prop({ required: true, trim: true })
+  country: string;
+
   @Prop({ type: [String], enum: Role, default: [Role.User] })
   roles: Role[];
 

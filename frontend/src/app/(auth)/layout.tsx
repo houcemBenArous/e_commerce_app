@@ -10,7 +10,7 @@ export default function AuthLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-      <aside className="relative hidden lg:flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-700 via-purple-700 to-fuchsia-700 text-white">
+      <aside className="relative hidden lg:flex lg:sticky lg:top-0 lg:h-screen flex-col items-start justify-start overflow-hidden bg-gradient-to-br from-indigo-700 via-purple-700 to-fuchsia-700 text-white">
         {/* Decorative background */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
