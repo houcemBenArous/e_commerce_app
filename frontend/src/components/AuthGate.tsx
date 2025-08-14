@@ -2,20 +2,31 @@
 
 import { PropsWithChildren, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { decodeJwt, getAccessToken, routeForRoles } from "../lib/auth";
+import { attemptRefresh, decodeJwt, getAccessToken, routeForRoles, saveAccessToken } from "../lib/auth";
 
 export function AuthGate({ children, requireAdmin = false }: PropsWithChildren<{ requireAdmin?: boolean }>) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-    const payload = decodeJwt<{ roles?: string[] }>(token);
-    const roles = payload?.roles || [];
+    const ensureAuth = async () => {
+      let token = getAccessToken();
+      let payload = token ? decodeJwt<{ roles?: string[]; exp?: number }>(token) : null;
+      const now = Math.floor(Date.now() / 1000);
+
+      if (!token || (payload?.exp && payload.exp <= now)) {
+        const refreshed = await attemptRefresh();
+        if (!refreshed) {
+          router.replace("/login");
+          return;
+        }
+        token = refreshed;
+        payload = decodeJwt<{ roles?: string[] }>(token);
+        // Persist in session for this tab
+        saveAccessToken(token, false);
+      }
+
+      const roles = payload?.roles || [];
 
     if (requireAdmin && !roles.includes("admin")) {
       // Redirect to the appropriate area if not admin
@@ -24,6 +35,8 @@ export function AuthGate({ children, requireAdmin = false }: PropsWithChildren<{
     }
 
     setReady(true);
+    };
+    void ensureAuth();
   }, [router, requireAdmin]);
 
   if (!ready) {

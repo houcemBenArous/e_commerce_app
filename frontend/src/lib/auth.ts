@@ -1,24 +1,29 @@
-export type Tokens = { accessToken: string; refreshToken: string };
+import { API_BASE } from './config';
+// In-memory access token (not persisted across reloads)
+let accessTokenMemory: string | null = null;
 
-export function saveTokens(tokens: Tokens, remember: boolean) {
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem('accessToken', tokens.accessToken);
-  storage.setItem('refreshToken', tokens.refreshToken);
+export function saveAccessToken(token: string, remember: boolean) {
+  accessTokenMemory = token;
+  // Optionally keep across reloads using sessionStorage (no refresh token stored in JS)
+  if (remember) {
+    sessionStorage.setItem('accessToken', token);
+  } else {
+    sessionStorage.removeItem('accessToken');
+  }
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-}
-
-export function getRefreshToken(): string | null {
-  return localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
+  if (accessTokenMemory) return accessTokenMemory;
+  const s = sessionStorage.getItem('accessToken');
+  if (s) accessTokenMemory = s;
+  return accessTokenMemory;
 }
 
 export function clearTokens() {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  accessTokenMemory = null;
+  try { localStorage.removeItem('accessToken'); } catch {}
+  try { localStorage.removeItem('refreshToken'); } catch {}
   sessionStorage.removeItem('accessToken');
-  sessionStorage.removeItem('refreshToken');
 }
 
 export function decodeJwt<T = any>(token: string): T | null {
@@ -37,4 +42,22 @@ export function routeForRoles(roles?: string[] | null): string {
   if (!roles || roles.length === 0) return '/user';
   if (roles.includes('admin')) return '/admin';
   return '/user';
+}
+
+export async function attemptRefresh(): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { accessToken?: string };
+    if (data?.accessToken) {
+      saveAccessToken(data.accessToken, false);
+      return data.accessToken;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
-import { saveTokens, decodeJwt, routeForRoles } from "../../../lib/auth";
+import { saveAccessToken, decodeJwt, routeForRoles } from "../../../lib/auth";
 
 function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -37,14 +37,15 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.message || "Sign in failed");
       }
-      const tokens = (await res.json()) as { accessToken: string; refreshToken: string };
-      saveTokens(tokens, remember);
-      const payload = decodeJwt<{ roles?: string[] }>(tokens.accessToken);
+      const data = (await res.json()) as { accessToken: string };
+      saveAccessToken(data.accessToken, remember);
+      const payload = decodeJwt<{ roles?: string[] }>(data.accessToken);
       const dest = routeForRoles(payload?.roles);
       router.push(dest);
     } catch (err: any) {

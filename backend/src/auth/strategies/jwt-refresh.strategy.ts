@@ -9,17 +9,16 @@ import { JwtPayload } from '../types/jwt-payload.type';
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(config: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => req?.cookies?.rt,
+      ]),
       secretOrKey: config.get<string>('JWT_RT_SECRET') ?? 'dev_refresh_secret',
       passReqToCallback: true,
     });
   }
 
   validate(req: Request, payload: JwtPayload) {
-    const auth = req.get('authorization');
-    const refreshToken = auth?.startsWith('Bearer ')
-      ? auth.replace('Bearer ', '')
-      : undefined;
+    const refreshToken = req?.cookies?.rt;
     return { ...payload, refreshToken } as JwtPayload & { refreshToken?: string };
   }
 }

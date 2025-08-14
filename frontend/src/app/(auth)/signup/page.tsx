@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
-import { saveTokens, decodeJwt, routeForRoles } from "../../../lib/auth";
+import { saveAccessToken, decodeJwt, routeForRoles } from "../../../lib/auth";
 
 function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -50,15 +50,16 @@ export default function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
+        credentials: "include",
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.message || "Sign up failed");
       }
-      const tokens = (await res.json()) as { accessToken: string; refreshToken: string };
+      const data = (await res.json()) as { accessToken: string };
       // Default to remember on signup
-      saveTokens(tokens, true);
-      const payload = decodeJwt<{ roles?: string[] }>(tokens.accessToken);
+      saveAccessToken(data.accessToken, true);
+      const payload = decodeJwt<{ roles?: string[] }>(data.accessToken);
       const dest = routeForRoles(payload?.roles);
       router.push(dest);
     } catch (err: any) {

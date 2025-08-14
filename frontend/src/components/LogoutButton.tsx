@@ -1,20 +1,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { clearTokens, getAccessToken } from "../lib/auth";
+import { attemptRefresh, clearTokens, getAccessToken } from "../lib/auth";
 import { API_BASE } from "../lib/config";
 
 export function LogoutButton() {
   const router = useRouter();
   return (
     <button
-      onClick={() => {
-        const at = getAccessToken();
+      onClick={async () => {
+        let at = getAccessToken();
+        if (!at) {
+          at = await attemptRefresh();
+        }
         if (at) {
-          fetch(`${API_BASE}/auth/logout`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${at}` },
-          }).catch(() => {});
+          try {
+            await fetch(`${API_BASE}/auth/logout`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${at}` },
+              credentials: "include",
+            });
+          } catch {}
         }
         clearTokens();
         router.replace("/login");
