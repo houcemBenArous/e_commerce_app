@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -48,5 +49,28 @@ export class UsersService {
 
   async setRefreshTokenHash(userId: string, hash: string | null) {
     await this.userModel.updateOne({ _id: userId }, { $set: { refreshTokenHash: hash } }).exec();
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const allowed: (keyof UpdateProfileDto)[] = [
+      'name',
+      'phone',
+      'addressLine1',
+      'addressLine2',
+      'city',
+      'state',
+      'postalCode',
+      'country',
+    ];
+    const update: Record<string, any> = {};
+    for (const key of allowed) {
+      const val = dto[key];
+      if (typeof val !== 'undefined') update[key] = val;
+    }
+    const user = await this.userModel
+      .findByIdAndUpdate(userId, { $set: update }, { new: true })
+      .exec();
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 }

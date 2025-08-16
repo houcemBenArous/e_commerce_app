@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AuthGate } from "../../../components/AuthGate";
 import { LogoutButton } from "../../../components/LogoutButton";
 
@@ -19,6 +20,14 @@ export default function UserLayout({
           </div>
           <h1 className="text-lg font-semibold">User</h1>
         </div>
+        <nav className="flex items-center gap-4 text-sm">
+          <Link href="/user" className="hover:underline">
+            Dashboard
+          </Link>
+          <Link href="/user/profile" className="hover:underline">
+            Profile
+          </Link>
+        </nav>
         <LogoutButton />
       </header>
       <main className="p-6">
