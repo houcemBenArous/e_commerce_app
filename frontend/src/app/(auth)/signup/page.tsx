@@ -413,6 +413,23 @@ export default function SignupPage() {
         )}
       </form>
 
+      <div className="mt-6">
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-black/10 dark:border-white/10" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-transparent px-2 text-neutral-500">or continue with</span>
+          </div>
+        </div>
+        <a
+          href={`${API_BASE}/auth/google`}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 dark:border-white/10 px-4 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+        >
+          Continue with Google
+        </a>
+      </div>
+
       <p className="text-xs text-neutral-500 mt-6">
         We will never share your email. You can delete your account at any time.
       </p>

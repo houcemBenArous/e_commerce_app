@@ -7,6 +7,8 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { GoogleEnabledGuard } from './guards/google-enabled.guard';
 
 @Module({
   imports: [
@@ -23,7 +25,25 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
       }),
     }),
   ],
-  providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
+  providers: [
+    AuthService,
+    JwtAccessStrategy,
+    JwtRefreshStrategy,
+    GoogleEnabledGuard,
+    {
+      provide: 'GOOGLE_STRATEGY',
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const id = config.get<string>('GOOGLE_CLIENT_ID');
+        const secret = config.get<string>('GOOGLE_CLIENT_SECRET');
+        if (id && secret) {
+          // Instantiating the strategy registers it with Passport under the name 'google'
+          return new GoogleStrategy(config);
+        }
+        return null as unknown as GoogleStrategy;
+      },
+    },
+  ],
   controllers: [AuthController],
   exports: [AuthService],
 })

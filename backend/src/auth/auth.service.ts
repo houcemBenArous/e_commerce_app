@@ -90,4 +90,34 @@ export class AuthService {
     await this.usersService.setRefreshTokenHash(user.id, rtHash);
     return tokens;
   }
+
+  /**
+   * Google OAuth login or signup.
+   * Finds existing user by email or creates a minimal profile with placeholders, then issues tokens.
+   */
+  async oauthLogin(params: { email: string; name: string }): Promise<Tokens> {
+    const email = params.email.toLowerCase();
+    let user = await this.usersService.findByEmail(email);
+    if (!user) {
+      // Create a minimal account with placeholder profile fields
+      const randomPassword = `oauth:${Math.random().toString(36).slice(2)}:${Date.now()}`;
+      const passwordHash = await this.hash(randomPassword);
+      user = await this.usersService.createUser({
+        name: params.name || 'User',
+        email,
+        passwordHash,
+        phone: 'N/A',
+        addressLine1: 'N/A',
+        city: 'N/A',
+        state: 'N/A',
+        postalCode: 'N/A',
+        country: 'N/A',
+      });
+    }
+
+    const tokens = await this.signTokens(user.id, user.email, user.roles ?? [Role.User]);
+    const rtHash = await this.hash(tokens.refreshToken);
+    await this.usersService.setRefreshTokenHash(user.id, rtHash);
+    return tokens;
+  }
 }
