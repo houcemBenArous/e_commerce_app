@@ -37,7 +37,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "nodemailer": "^6.9.15"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -48,6 +49,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.0",
+    "@types/nodemailer": "^6.4.15",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",

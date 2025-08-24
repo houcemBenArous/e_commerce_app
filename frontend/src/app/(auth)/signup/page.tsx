@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
-import { saveAccessToken, decodeJwt, routeForRoles } from "../../../lib/auth";
 import { COUNTRIES } from "../../../lib/countries";
 
 function validateEmail(v: string) {
@@ -67,7 +66,7 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/signup`, {
+      const res = await fetch(`${API_BASE}/auth/signup/initiate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,14 +85,11 @@ export default function SignupPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.message || "Sign up failed");
+        throw new Error(err?.message || "Failed to initiate signup");
       }
-      const data = (await res.json()) as { accessToken: string };
-      // Default to remember on signup
-      saveAccessToken(data.accessToken, true);
-      const payload = decodeJwt<{ roles?: string[] }>(data.accessToken);
-      const dest = routeForRoles(payload?.roles);
-      router.push(dest);
+      const data = (await res.json()) as { verificationId: string; email: string; expiresAt?: string; ttlSec?: number };
+      const exp = data.expiresAt ? `&exp=${encodeURIComponent(data.expiresAt)}` : "";
+      router.push(`/verify?id=${encodeURIComponent(data.verificationId)}&email=${encodeURIComponent(data.email)}&source=local${exp}`);
     } catch (err: any) {
       setMessage(err.message || "Something went wrong");
     } finally {

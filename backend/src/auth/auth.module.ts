@@ -9,11 +9,16 @@ import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GoogleEnabledGuard } from './guards/google-enabled.guard';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Verification, VerificationSchema } from './verification/verification.schema';
+import { VerificationService } from './verification/verification.service';
+import { MailerService } from '../common/mailer/mailer.service';
 
 @Module({
   imports: [
     ConfigModule,
     UsersModule,
+    MongooseModule.forFeature([{ name: Verification.name, schema: VerificationSchema }]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -30,6 +35,8 @@ import { GoogleEnabledGuard } from './guards/google-enabled.guard';
     JwtAccessStrategy,
     JwtRefreshStrategy,
     GoogleEnabledGuard,
+    VerificationService,
+    MailerService,
     {
       provide: 'GOOGLE_STRATEGY',
       inject: [ConfigService],

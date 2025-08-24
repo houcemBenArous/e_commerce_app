@@ -8,6 +8,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { GoogleEnabledGuard } from './guards/google-enabled.guard';
 import type { Response } from 'express';
 import type { Request } from 'express';
+import { VerifyConfirmDto } from './dto/verify-confirm.dto';
+import { VerifyRequestDto } from './dto/verify-request.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -26,6 +28,13 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     return { accessToken: tokens.accessToken };
+  }
+
+  // New: initiate signup with email verification
+  @Public()
+  @Post('signup/initiate')
+  async initiateSignup(@Body() dto: SignupDto) {
+    return this.auth.initiateSignup(dto);
   }
 
   @Public()
@@ -73,6 +82,29 @@ export class AuthController {
     return { accessToken: tokens.accessToken };
   }
 
+  // New: confirm verification code -> create account and issue tokens
+  @Public()
+  @Post('verify/confirm')
+  async verifyConfirm(@Body() dto: VerifyConfirmDto, @Res({ passthrough: true }) res: Response) {
+    const tokens = await this.auth.confirmVerification(dto.verificationId, dto.code);
+    const secure = process.env.NODE_ENV === 'production';
+    res.cookie('rt', tokens.refreshToken, {
+      httpOnly: true,
+      secure,
+      sameSite: 'lax',
+      path: '/api/auth',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    return { accessToken: tokens.accessToken };
+  }
+
+  // New: resend verification code
+  @Public()
+  @Post('verify/request')
+  async verifyRequest(@Body() dto: VerifyRequestDto) {
+    return this.auth.resendVerification(dto.verificationId);
+  }
+
   @Get('me')
   async me(@GetCurrentUser() user: any) {
     return user;
@@ -98,16 +130,15 @@ export class AuthController {
     if (!email) {
       return res.redirect((process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000') + '/login?error=google_no_email');
     }
-    const tokens = await this.auth.oauthLogin({ email, name: name || 'User' });
+    const result = await this.auth.beginGoogleAuthOrIssueTokens(email, name || 'User');
     const secure = process.env.NODE_ENV === 'production';
-    res.cookie('rt', tokens.refreshToken, {
+    res.cookie('rt', result.tokens.refreshToken, {
       httpOnly: true,
       secure,
       sameSite: 'lax',
       path: '/api/auth',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    // Redirect to frontend OAuth callback; frontend will call /auth/refresh to obtain access token
     const dest = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000') + '/oauth/callback';
     return res.redirect(dest);
   }

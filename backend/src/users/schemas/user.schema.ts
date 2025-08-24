@@ -41,6 +41,9 @@ export class User {
 
   @Prop({ type: String, default: null })
   refreshTokenHash?: string | null;
+
+  @Prop({ type: Boolean, default: true })
+  emailVerified: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -52,6 +55,7 @@ UserSchema.set('toJSON', {
     delete ret.__v;
     delete ret.passwordHash;
     delete ret.refreshTokenHash;
+    delete ret.emailVerified;
     return ret;
   },
 });
