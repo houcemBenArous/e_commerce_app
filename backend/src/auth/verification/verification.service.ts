@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -13,14 +14,23 @@ function generateCode(): string {
 
 @Injectable()
 export class VerificationService implements OnModuleInit {
-  private readonly codeTTLms = 5 * 60 * 1000; // 5 minutes
-  private readonly maxAttempts = 5;
-  private readonly resendCooldownMs = 30 * 1000; // 30 seconds
+  private codeTTLms: number; // ms
+  private maxAttempts: number;
+  private resendCooldownMs: number; // ms
 
   constructor(
     @InjectModel(Verification.name) private readonly model: Model<VerificationDocument>,
     private readonly mailer: MailerService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    const ttlSec = Number(this.config.get('OTP_TTL_SECONDS'));
+    const cooldownSec = Number(this.config.get('OTP_RESEND_COOLDOWN_SECONDS'));
+    const maxAttempts = Number(this.config.get('OTP_MAX_ATTEMPTS'));
+
+    this.codeTTLms = (Number.isFinite(ttlSec) && ttlSec! > 0 ? ttlSec! : 300) * 1000;
+    this.resendCooldownMs = (Number.isFinite(cooldownSec) && cooldownSec! > 0 ? cooldownSec! : 30) * 1000;
+    this.maxAttempts = Number.isFinite(maxAttempts) && maxAttempts! > 0 ? maxAttempts! : 5;
+  }
 
   async onModuleInit() {
     // Ensure the old TTL index on expiresAt is dropped, and the new createdAt TTL is applied.
@@ -33,6 +43,20 @@ export class VerificationService implements OnModuleInit {
       await this.model.syncIndexes();
     } catch (e) {
       // ignore index sync errors; not critical for functionality
+    }
+
+    // Adjust TTL for createdAt index using env VERIFICATION_CLEANUP_TTL_HOURS (default 24h)
+    const cleanupHours = Number(this.config.get('VERIFICATION_CLEANUP_TTL_HOURS'));
+    const expireAfterSeconds = Math.max(1, Math.floor(((Number.isFinite(cleanupHours) && cleanupHours! > 0 ? cleanupHours! : 24) * 3600)));
+    try {
+      await this.model.collection.dropIndex('createdAt_1');
+    } catch (e) {
+      // ignore if missing
+    }
+    try {
+      await this.model.collection.createIndex({ createdAt: 1 }, { name: 'createdAt_1', expireAfterSeconds });
+    } catch (e) {
+      // ignore if cannot create (non-fatal)
     }
   }
 
