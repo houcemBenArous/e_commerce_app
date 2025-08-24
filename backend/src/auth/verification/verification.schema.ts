@@ -26,5 +26,7 @@ export class Verification {
 
 export const VerificationSchema = SchemaFactory.createForClass(Verification);
 
-// TTL index to auto-clean expired verifications
-VerificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// TTL index to auto-clean stale verifications. We retain docs after `expiresAt`
+// so users can still request a new code after expiry (resend regenerates code
+// and pushes `expiresAt`). Clean up after 24 hours from creation.
+VerificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 });

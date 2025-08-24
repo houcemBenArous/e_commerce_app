@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [message, setMessage] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -44,7 +43,7 @@ export default function LoginPage() {
         throw new Error(err?.message || "Sign in failed");
       }
       const data = (await res.json()) as { accessToken: string };
-      saveAccessToken(data.accessToken, remember);
+      saveAccessToken(data.accessToken, false);
       const payload = decodeJwt<{ roles?: string[] }>(data.accessToken);
       const dest = routeForRoles(payload?.roles);
       router.push(dest);
@@ -121,16 +120,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="size-4 accent-indigo-600"
-            />
-            Remember me
-          </label>
+        <div className="flex items-center justify-end">
           <a href="#" className="text-sm text-neutral-500 hover:underline">
             Forgot password?
           </a>

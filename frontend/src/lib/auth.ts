@@ -2,20 +2,14 @@ import { API_BASE } from './config';
 // In-memory access token (not persisted across reloads)
 let accessTokenMemory: string | null = null;
 
-export function saveAccessToken(token: string, remember: boolean) {
+export function saveAccessToken(token: string, _remember: boolean) {
+  // Security-first: keep access token in memory only. Do not persist in web storage.
   accessTokenMemory = token;
-  // Optionally keep across reloads using sessionStorage (no refresh token stored in JS)
-  if (remember) {
-    sessionStorage.setItem('accessToken', token);
-  } else {
-    sessionStorage.removeItem('accessToken');
-  }
+  try { sessionStorage.removeItem('accessToken'); } catch {}
 }
 
 export function getAccessToken(): string | null {
-  if (accessTokenMemory) return accessTokenMemory;
-  const s = sessionStorage.getItem('accessToken');
-  if (s) accessTokenMemory = s;
+  // Memory-only; after reload, AuthGate will perform a silent refresh using HttpOnly rt cookie
   return accessTokenMemory;
 }
 

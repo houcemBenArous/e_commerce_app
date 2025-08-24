@@ -78,7 +78,7 @@ export default function VerifyPage() {
         throw new Error(err?.message || "Verification failed");
       }
       const data = (await res.json()) as { accessToken: string };
-      saveAccessToken(data.accessToken, true);
+      saveAccessToken(data.accessToken, false);
       const payload = decodeJwt<{ roles?: string[] }>(data.accessToken);
       const dest = routeForRoles(payload?.roles);
       router.replace(dest);

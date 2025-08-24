@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, BadRequestException } from '@nestjs/common';
+import { ConflictException, Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -12,7 +12,7 @@ function generateCode(): string {
 }
 
 @Injectable()
-export class VerificationService {
+export class VerificationService implements OnModuleInit {
   private readonly codeTTLms = 5 * 60 * 1000; // 5 minutes
   private readonly maxAttempts = 5;
   private readonly resendCooldownMs = 30 * 1000; // 30 seconds
@@ -21,6 +21,20 @@ export class VerificationService {
     @InjectModel(Verification.name) private readonly model: Model<VerificationDocument>,
     private readonly mailer: MailerService,
   ) {}
+
+  async onModuleInit() {
+    // Ensure the old TTL index on expiresAt is dropped, and the new createdAt TTL is applied.
+    try {
+      await this.model.collection.dropIndex('expiresAt_1');
+    } catch (e) {
+      // ignore if it doesn't exist
+    }
+    try {
+      await this.model.syncIndexes();
+    } catch (e) {
+      // ignore index sync errors; not critical for functionality
+    }
+  }
 
   async create(email: string, type: 'local' | 'google', payload: Record<string, any>) {
     email = email.toLowerCase();
@@ -47,7 +61,6 @@ export class VerificationService {
   async resend(verificationId: string) {
     const doc = await this.model.findById(verificationId).exec();
     if (!doc) throw new BadRequestException('Verification not found');
-    if (doc.expiresAt.getTime() < Date.now()) throw new BadRequestException('Verification expired');
     // Only allow resending codes for local signup; skip for OAuth verifications
     if (doc.type !== 'local') {
       return { ok: true };
@@ -74,11 +87,9 @@ export class VerificationService {
     const doc = await this.model.findById(verificationId).exec();
     if (!doc) throw new BadRequestException('Invalid verification');
     if (doc.expiresAt.getTime() < Date.now()) {
-      await doc.deleteOne();
       throw new BadRequestException('Verification expired');
     }
     if (doc.attempts >= this.maxAttempts) {
-      await doc.deleteOne();
       throw new BadRequestException('Too many attempts');
     }
 
