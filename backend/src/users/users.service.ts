@@ -51,6 +51,10 @@ export class UsersService {
     await this.userModel.updateOne({ _id: userId }, { $set: { refreshTokenHash: hash } }).exec();
   }
 
+  async setPasswordById(userId: string, passwordHash: string) {
+    await this.userModel.updateOne({ _id: userId }, { $set: { passwordHash } }).exec();
+  }
+
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const allowed: (keyof UpdateProfileDto)[] = [
       'name',

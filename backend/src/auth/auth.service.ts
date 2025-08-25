@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
@@ -9,6 +9,9 @@ import { Tokens } from './types/tokens.type';
 import { JwtPayload } from './types/jwt-payload.type';
 import { Role } from '../common/enums/role.enum';
 import { VerificationService } from './verification/verification.service';
+import { PasswordResetService } from './password-reset/password-reset.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +20,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly verification: VerificationService,
+    private readonly passwordReset: PasswordResetService,
   ) {}
 
   private async hash(data: string) {
@@ -232,5 +236,34 @@ export class AuthService {
     const rtHash = await this.hash(tokens.refreshToken);
     await this.usersService.setRefreshTokenHash(user.id, rtHash);
     return tokens;
+  }
+
+  /**
+   * Forgot password: send a reset link if the email exists. Always return ok to avoid user enumeration.
+   */
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ ok: true }> {
+    const email = dto.email.toLowerCase();
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      // Avoid user enumeration
+      return { ok: true };
+    }
+    await this.passwordReset.request(email);
+    return { ok: true };
+  }
+
+  /**
+   * Reset password: verify link, update user's password, invalidate refresh token sessions.
+   */
+  async resetPassword(dto: ResetPasswordDto): Promise<{ ok: true }> {
+    const { email } = await this.passwordReset.verifyAndConsume(dto.resetId, dto.token);
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new BadRequestException('Invalid or expired reset link');
+
+    const passwordHash = await this.hash(dto.password);
+    await this.usersService.setPasswordById(user.id, passwordHash);
+    // Invalidate sessions
+    await this.usersService.setRefreshTokenHash(user.id, null);
+    return { ok: true };
   }
 }

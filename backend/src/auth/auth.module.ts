@@ -11,6 +11,8 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { GoogleEnabledGuard } from './guards/google-enabled.guard';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Verification, VerificationSchema } from './verification/verification.schema';
+import { PasswordReset, PasswordResetSchema } from './password-reset/password-reset.schema';
+import { PasswordResetService } from './password-reset/password-reset.service';
 import { VerificationService } from './verification/verification.service';
 import { MailerService } from '../common/mailer/mailer.service';
 
@@ -18,7 +20,10 @@ import { MailerService } from '../common/mailer/mailer.service';
   imports: [
     ConfigModule,
     UsersModule,
-    MongooseModule.forFeature([{ name: Verification.name, schema: VerificationSchema }]),
+    MongooseModule.forFeature([
+      { name: Verification.name, schema: VerificationSchema },
+      { name: PasswordReset.name, schema: PasswordResetSchema },
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -36,6 +41,7 @@ import { MailerService } from '../common/mailer/mailer.service';
     JwtRefreshStrategy,
     GoogleEnabledGuard,
     VerificationService,
+    PasswordResetService,
     MailerService,
     {
       provide: 'GOOGLE_STRATEGY',

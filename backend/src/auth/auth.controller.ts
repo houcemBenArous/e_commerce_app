@@ -10,6 +10,8 @@ import type { Response } from 'express';
 import type { Request } from 'express';
 import { VerifyConfirmDto } from './dto/verify-confirm.dto';
 import { VerifyRequestDto } from './dto/verify-request.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -108,6 +110,21 @@ export class AuthController {
   @Get('me')
   async me(@GetCurrentUser() user: any) {
     return user;
+  }
+
+  // Password reset by link
+  @Public()
+  @HttpCode(200)
+  @Post('password/forgot')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto);
+  }
+
+  @Public()
+  @HttpCode(200)
+  @Post('password/reset')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto);
   }
 
   // Google OAuth

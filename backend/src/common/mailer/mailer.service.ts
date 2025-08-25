@@ -72,4 +72,35 @@ export class MailerService {
     this.logger.log(`Sent verification email to ${to}: ${info.messageId || 'logged'}`);
     return info;
   }
+
+  async sendPasswordResetLink(to: string, link: string) {
+    const transporter = await this.getTransporter();
+    const appName = this.config.get<string>('APP_NAME') || 'E-Commerce App';
+    const subject = `${appName} - Password reset request`;
+    const text = `We received a request to reset your password.
+
+If you made this request, click the link below to reset your password. This link expires soon.
+
+${link}
+
+If you did not request a password reset, you can ignore this email.`;
+    const html = `
+      <p>We received a request to reset your password for <strong>${appName}</strong>.</p>
+      <p>If you made this request, click the button below. This link expires soon.</p>
+      <p><a href="${link}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px">Reset password</a></p>
+      <p>If the button doesn't work, copy and paste this URL into your browser:</p>
+      <p><a href="${link}">${link}</a></p>
+      <p>If you did not request a password reset, you can safely ignore this email.</p>
+    `;
+
+    const info = await transporter.sendMail({
+      from: this.getFrom(),
+      to,
+      subject,
+      text,
+      html,
+    });
+    this.logger.log(`Sent password reset email to ${to}: ${info.messageId || 'logged'}`);
+    return info;
+  }
 }
